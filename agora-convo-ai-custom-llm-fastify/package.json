@@ -1,0 +1,39 @@
+{
+  "name": "agora-convo-ai-custom-llm-fastify",
+  "version": "1.0.0",
+  "description": "A node based service layer that accepts incoming requests from the Agora Convo AI service and passes it to an AI model, allowing for RAG and tools",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "nodemon",
+    "build": "tsc",
+    "postinstall": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "digitallysavvy",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@fastify/helmet": "^11.1.1",
+    "@pinecone-database/pinecone": "^6.1.3",
+    "@supabase/supabase-js": "^2.81.1",
+    "@types/node": "^20.11.30",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.26.2",
+    "nodemailer": "^7.0.10",
+    "openai": "^4.20.0",
+    "pino-pretty": "^10.3.1",
+    "serverless-http": "^3.2.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.3",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

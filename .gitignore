@@ -1,0 +1,16 @@
+smart-support-frontend/node_modules/
+agora-webhook/node_modules/
+smart-support-backend/node_modules/
+agora-convo-ai-custom-llm-fastify/node_modules/
+
+# Secrets & environment files
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.p12
+*.crt
+*-credentials.json
+*-creds.json
+secrets.*

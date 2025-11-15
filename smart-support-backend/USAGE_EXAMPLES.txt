@@ -1,0 +1,328 @@
+=== SMART SUPPORT BACKEND - API USAGE EXAMPLES ===
+
+BASE URL: http://localhost:4000
+
+=== 1. ESCALATION ENDPOINTS ===
+
+// Escalate an issue (bot detects complex issue)
+POST /api/escalate
+{
+  "customerId": "aman",
+  "issue": "Customer reported payment failed 3 times and is very frustrated",
+  "conversationHistory": "User: My payment keeps failing!\nBot: I understand your frustration...",
+  "agentId": "agent_aman_123456",
+  "severity": "high"
+}
+
+Response:
+{
+  "success": true,
+  "escalationId": "ESC-1234567890",
+  "message": "Issue escalated to support team",
+  "emailSent": true
+}
+
+// Get all escalations
+GET /api/escalations
+
+// Get open escalations only
+GET /api/escalations?status=open
+
+// Get escalations for specific customer
+GET /api/escalations?customerId=aman
+
+// Update escalation status
+PUT /api/escalations/ESC-1234567890
+{
+  "status": "in_progress",
+  "assignedTo": "support@optivisx.com",
+  "resolution": "Called customer and processed refund manually"
+}
+
+
+=== 2. BOT CHANGE MANAGEMENT ===
+
+// Bot updates order information
+POST /api/bot/update-order
+{
+  "orderId": "A123",
+  "updates": {
+    "eta": "Arriving today by 6 PM",
+    "lastUpdate": "Out for delivery - Updated per customer request"
+  },
+  "reason": "Customer requested delivery time update",
+  "agentId": "agent_aman_123456"
+}
+
+Response:
+{
+  "success": true,
+  "changeId": "CHG-1",
+  "orderId": "A123",
+  "updatedOrder": { ... },
+  "message": "Order updated successfully. Change tracked for review."
+}
+
+// Bot updates customer information
+POST /api/bot/update-customer
+{
+  "customerId": "aman",
+  "updates": {
+    "language": "hi",
+    "lastContactReason": "Delivery inquiry"
+  },
+  "reason": "Customer preference update",
+  "agentId": "agent_aman_123456"
+}
+
+Response:
+{
+  "success": true,
+  "changeId": "CHG-2",
+  "customerId": "aman",
+  "updatedCustomer": { ... },
+  "message": "Customer updated successfully. Change tracked for review."
+}
+
+
+=== 3. CHANGE REVIEW & ROLLBACK ===
+
+// Get all changes
+GET /api/changes
+
+// Get only bot-made changes
+GET /api/changes?madeBy=bot
+
+// Get only applied changes
+GET /api/changes?status=applied
+
+// Get order changes only
+GET /api/changes?entityType=order
+
+// Get specific change details
+GET /api/changes/CHG-1
+
+Response:
+{
+  "changeId": "CHG-1",
+  "timestamp": "2024-11-14T10:30:00.000Z",
+  "status": "applied",
+  "entityType": "order",
+  "entityId": "A123",
+  "madeBy": "bot",
+  "agentId": "agent_aman_123456",
+  "reason": "Customer requested delivery time update",
+  "oldValues": { "eta": "Tomorrow", ... },
+  "newValues": { "eta": "Arriving today by 6 PM", ... },
+  "changes": { "eta": "Arriving today by 6 PM", ... }
+}
+
+// Rollback a change (if bot made mistake)
+POST /api/changes/CHG-1/rollback
+{
+  "reason": "Bot updated wrong order - reverting to original values"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Change rolled back successfully",
+  "changeId": "CHG-1",
+  "restoredValues": { "eta": "Tomorrow", ... }
+}
+
+// Get complete history for an entity
+GET /api/entity-history/order/A123
+
+Response:
+{
+  "entityType": "order",
+  "entityId": "A123",
+  "currentState": { ... current order data ... },
+  "changeHistory": [
+    {
+      "changeId": "CHG-1",
+      "timestamp": "2024-11-14T10:30:00.000Z",
+      "status": "rolled_back",
+      ...
+    }
+  ],
+  "totalChanges": 1
+}
+
+
+=== 4. TYPICAL WORKFLOW EXAMPLES ===
+
+--- Scenario 1: Bot handles simple update ---
+1. Customer: "Can you update my delivery address?"
+2. Bot validates address is reasonable
+3. Bot calls: POST /api/bot/update-customer with new address
+4. Bot responds: "Done! Your delivery address has been updated."
+5. Developer reviews: GET /api/changes?madeBy=bot
+6. If wrong: POST /api/changes/CHG-X/rollback
+
+--- Scenario 2: Bot escalates complex issue ---
+1. Customer: "This is the 3rd time my payment failed! I want a refund NOW!"
+2. Bot detects: anger + payment issue = COMPLEX
+3. Bot calls: POST /api/escalate
+4. Bot responds: "I completely understand your frustration. I'm escalating this to our payment specialist who will contact you within 2 hours."
+5. Email sent to info@optivisx.com
+6. Support team: GET /api/escalations?status=open
+7. Support resolves and updates: PUT /api/escalations/ESC-X
+
+--- Scenario 3: Customer asks about order ---
+1. Customer: "Where is my order A123?"
+2. Bot checks order snapshot (in system prompt)
+3. Bot responds: "Your order A123 is out for delivery and will arrive tomorrow!"
+4. No API calls needed - data already in context
+
+--- Scenario 4: Bot makes mistake ---
+1. Bot updated wrong order ETA
+2. Developer notices: GET /api/changes shows CHG-5
+3. Developer reviews: GET /api/changes/CHG-5
+4. Developer rollback: POST /api/changes/CHG-5/rollback
+5. Order restored to original state
+6. Change marked as "rolled_back"
+
+
+=== 5. MONITORING & ANALYTICS ===
+
+// Check change statistics
+GET /api/changes
+
+Response includes stats:
+{
+  "changes": [ ... ],
+  "count": 10,
+  "stats": {
+    "total": 10,
+    "pending": 0,
+    "applied": 8,
+    "rolledBack": 2,
+    "byBot": 7,
+    "byHuman": 3
+  }
+}
+
+// Check escalation status
+GET /api/escalations
+
+// Review what bot changed today
+GET /api/changes?madeBy=bot&status=applied
+
+
+=== 6. CURL EXAMPLES ===
+
+# Escalate issue
+curl -X POST http://localhost:4000/api/escalate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "aman",
+    "issue": "Payment failed multiple times",
+    "conversationHistory": "Customer very frustrated...",
+    "agentId": "agent_123",
+    "severity": "high"
+  }'
+
+# Bot updates order
+curl -X POST http://localhost:4000/api/bot/update-order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orderId": "A123",
+    "updates": {"eta": "Today"},
+    "reason": "Customer request",
+    "agentId": "agent_123"
+  }'
+
+# Get all changes
+curl http://localhost:4000/api/changes
+
+# Rollback a change
+curl -X POST http://localhost:4000/api/changes/CHG-1/rollback \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Bot made incorrect update"}'
+
+
+=== 7. EMAIL CONFIGURATION ===
+
+For Gmail:
+1. Go to Google Account settings
+2. Enable 2-factor authentication
+3. Generate App Password (not your regular password)
+4. Add to .env:
+   SMTP_USER=your_email@gmail.com
+   SMTP_PASS=your_16_char_app_password
+
+For other email providers, update SMTP_HOST and SMTP_PORT in .env
+
+
+=== 8. INTEGRATION WITH FRONTEND ===
+
+When bot needs to escalate:
+```javascript
+// In your bot logic
+if (detectComplexIssue(userMessage)) {
+  const response = await fetch('http://localhost:4000/api/escalate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customerId: currentCustomerId,
+      issue: summarizeIssue(conversation),
+      conversationHistory: getConversationText(),
+      agentId: currentAgentId,
+      severity: calculateSeverity()
+    })
+  });
+  
+  // Tell user
+  return "I'm escalating this to our specialist team...";
+}
+```
+
+When bot needs to update data:
+```javascript
+// In your bot logic
+if (customerRequestsSimpleUpdate(userMessage)) {
+  const response = await fetch('http://localhost:4000/api/bot/update-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      orderId: extractOrderId(),
+      updates: { eta: newETA },
+      reason: "Customer requested update",
+      agentId: currentAgentId
+    })
+  });
+  
+  return "Done! I've updated your delivery time.";
+}
+```
+
+
+=== 9. DEVELOPER DASHBOARD USE CASES ===
+
+Morning review:
+1. GET /api/changes?madeBy=bot&status=applied
+   - Review what bot changed yesterday
+   - Spot check for accuracy
+
+2. GET /api/escalations?status=open
+   - See what needs human attention
+   - Assign to team members
+
+If customer reports wrong info:
+1. GET /api/entity-history/order/A123
+   - See all changes to that order
+2. Find problematic change
+3. POST /api/changes/CHG-X/rollback
+   - Restore correct data
+
+Weekly audit:
+1. GET /api/changes (check stats)
+   - How many bot changes?
+   - How many rollbacks needed?
+   - Accuracy rate = (applied - rolledBack) / applied
+
+
+=== END OF EXAMPLES ===
+
