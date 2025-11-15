@@ -213,10 +213,8 @@ REACT_APP_WS_URL=ws://localhost:3005/ws/structured-data
 - Agora join errors usually indicate invalid token/app certificate or that your custom LLM URL is unreachable. Use ngrok tunnels and watch backend logs for the `join` request payload.
 - SMTP warnings (`📧 Email not configured`) mean escalations will still be stored but not mailed; provide `SMTP_USER` + `SMTP_PASS` to enable notifications.
 
-## Next steps
-
-1. Deploy the Fastify LLM and backend behind HTTPS (Render, Fly.io, etc.) so Agora can call them without ngrok.
-2. Wire `agora-webhook` to backend endpoints (`/api/bot/update-order`, `/api/escalate/check`) once those routes are enabled, or extend `server.js` accordingly.
-3. Expand the structured insight schema (e.g., loyalty points, predicted NPS) — just emit richer JSON and tweak `smart-support-frontend/src/App.js` to render the new fields.
-
 With the services configured, anyone can clone this repo, fill in the `.env` files, start all four processes, and run the full SmartSense customer support experience end-to-end.
+
+## Credits
+
+Built with care by **Team Titans** — Cheena & Aman.
